@@ -1,17 +1,4 @@
-/*
-https://www.youtube.com/watch?v=d_L64KT3SFM
-Microservice to handle get requests from frontend
-Is this containerized?
-Need a db?
-Volumes?
-
-and then deploy to rancher?
-
-This go file must connect to databse and handle HTTP GET
-GET format:
-http://nateo.discovery.cs.vt.edu?question=text
-text = value from QUESTION table (MariaDB)
-*/
+//create information in the database
 package main
 
 import (
@@ -32,30 +19,40 @@ type Response struct {
 //main 
 func main(){
 	log.Println("Chatbot Service POST")
-	output := database.Test("yo")
-	db = database.ConnectDB()
-	fmt.Println(output)
+	// database.ConnectDB()
+	database.Test("hola")
 	
 	router := mux.NewRouter()
-	// router.HandleFunc("/", getHandler).Methods("GET")
+	router.HandleFunc("/", postHandler).Methods("POST")
 
 	log.Println("Server listening on port 8080")
 	http.ListenAndServe(":8080", router)
 }
 
 
-// //GET handler
-// func getHandler(writer http.ResponseWriter, r *http.Request){
-// 	//set response type to json
-// 	queryParams := r.URL.Query()
-// 	question := queryParams.Get("question")
-//
-// 	writer.Header().Set("Content-Type", "application/json")
-// 	//get from database
-// 	dbResponse := getDatabase(question)
-// 	resp := Response{Message: dbResponse}
-//
-// 	//encode and send json
-// 	json.NewEncoder(writer).Encode(resp)
-// }
-//
+//syntax
+//POST <request-target>["?"<query>]
+func postHandler(writer http.ResponseWriter, r *http.Request){
+	//set response type to json
+	// queryParams := r.URL.Query()
+	err := r.ParseForm()
+	if err != nil{
+		fmt.Println("Error: ", err)
+	}
+
+	database.PostDB(r.PostForm)
+	database.GetDB(r.PostForm)
+	database.PutDB(r.PostForm)
+	database.DeleteDB(r.PostForm)
+//	question := queryParams.Get("question")
+
+	writer.Header().Set("Content-Type", "application/json")
+	//write to db??
+	// dbResponse := getDatabase(question)
+	//
+	// resp := Response{Message: dbResponse}
+	//
+	// //encode and send json
+	// json.NewEncoder(writer).Encode(resp)
+}
+

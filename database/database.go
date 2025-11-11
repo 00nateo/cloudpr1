@@ -11,13 +11,15 @@ This go file must connect to databse and handle HTTP GET
 GET format:
 http://nateo.discovery.cs.vt.edu?question=text
 text = value from QUESTION table (MariaDB)
-
 */
-package database 
+package database
+
 import (
 	"database/sql"
-	"log"
 	"fmt"
+	"log"
+	"net/url"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 var db *sql.DB
@@ -37,11 +39,47 @@ func Checkdb() string{
 	return "checkdb"
 
 }
+func GetDB(body url.Values) {
+	fmt.Println("=====Database GET=====")
+	question := body.Get("question")
+	reply := body.Get("reply")
 
-func Test(yo string) string{
-	return yo
+	fmt.Println(question)
+	fmt.Println(reply)
+	//query database
+	
+}
+func PostDB(body url.Values) {
+	fmt.Println("=====Database POST=====")
+	question := body.Get("question")
+	reply := body.Get("reply")
+
+	fmt.Println(question)
+	fmt.Println(reply)
+	//add to database
+	
 }
 
+func PutDB(body url.Values) {
+	fmt.Println("=====Database PUT=====")
+	question := body.Get("question")
+	reply := body.Get("reply")
+
+	fmt.Println(question)
+	fmt.Println(reply)
+	//update database
+	
+}
+func DeleteDB(body url.Values) {
+	fmt.Println("=====Database DELETE=====")
+	question := body.Get("question")
+	reply := body.Get("reply")
+
+	fmt.Println(question)
+	fmt.Println(reply)
+	//delete from database
+	
+}
 
 func ConnectDB() *sql.DB{
 	//connect with Unix socket 
@@ -66,3 +104,6 @@ func ConnectDB() *sql.DB{
 	return db
 }
 
+func Test(input string) {
+	fmt.Println("Database test")
+}
