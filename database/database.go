@@ -1,17 +1,3 @@
-/*
-https://www.youtube.com/watch?v=d_L64KT3SFM
-Microservice to handle get requests from frontend
-Is this containerized?
-Need a db?
-Volumes?
-
-and then deploy to rancher?
-
-This go file must connect to databse and handle HTTP GET
-GET format:
-http://nateo.discovery.cs.vt.edu?question=text
-text = value from QUESTION table (MariaDB)
-*/
 package database
 
 import (
@@ -19,11 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-
 	_ "github.com/go-sql-driver/mysql"
 )
 var db *sql.DB
-
 func Checkdb() string{
 	log.Println("Checking database....")
 	var count int
@@ -39,15 +23,23 @@ func Checkdb() string{
 	return "checkdb"
 
 }
-func GetDB(body url.Values) {
+func GetDB(question string) string{
 	fmt.Println("=====Database GET=====")
-	question := body.Get("question")
-	reply := body.Get("reply")
+	db=ConnectDB()
 
-	fmt.Println(question)
-	fmt.Println(reply)
-	//query database
+	var reply string
+	query := "SELECT reply FROM chatbot_hints WHERE question = ?"
+	err := db.QueryRow(query, question).Scan(&reply)
+
+	log.Println(reply)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "Sorry not be able to understand you"
+		} 
+	}
 	
+	return reply
 }
 func PostDB(body url.Values) {
 	fmt.Println("=====Database POST=====")
@@ -86,7 +78,7 @@ func ConnectDB() *sql.DB{
 	// connectionString := "root@unix(/run/mysqld/mysqld.sock)/chatbot"
 	//Local
 	// connectionString := "root:ChangeMe@tcp(nateodb:3306)/chatbot"
-	connectionString := "root:ChangeMe@tcp(mariadb_container:3306)/chatbot"
+	connectionString := "root:ChangeMe@tcp(localhost:3306)/chatbot"
 	
 	db, error := sql.Open("mysql", connectionString)
 	if error != nil {
@@ -104,6 +96,3 @@ func ConnectDB() *sql.DB{
 	return db
 }
 
-func Test(input string) {
-	fmt.Println("Database test")
-}

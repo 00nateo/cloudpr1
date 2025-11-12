@@ -1,0 +1,2 @@
+go mod edit -replace example.com/database=../database
+go mod tidy
