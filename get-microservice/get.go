@@ -4,10 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"log"
-	"fmt"
-	"net/url"
+	"example.com/database"
 	"github.com/gorilla/mux"
-	_ "github.com/go-sql-driver/mysql"
 )
 var db *sql.DB
 type Response struct {
@@ -16,8 +14,8 @@ type Response struct {
 
 //main 
 func main(){
-	log.Println("GET Microservice")
-	db = connectDB()
+	log.Println("Chatbot Service Adminer")
+	db = database.ConnectDB()
 	router := mux.NewRouter()
 	router.HandleFunc("/", getHandler).Methods("GET")
 
@@ -29,53 +27,14 @@ func main(){
 func getHandler(writer http.ResponseWriter, r *http.Request){
 	//set response type to json
 	writer.Header().Set("Content-Type", "application/json")
+
 	queryParams := r.URL.Query()
+	question := queryParams.Get("question")
 
-	dbResponse := getDB(queryParams)
-	fmt.Println(queryParams)
-
+	dbResponse := database.GetDB(question)
 	//get from database
 	resp := Response{Message: dbResponse}
 
 	//encode and send json
 	json.NewEncoder(writer).Encode(resp)
-}
-
-func getDB(body url.Values) string{
-	log.Println("=====Database GET=====")
-	question := body.Get("question")
-	var reply string
-
-	//query database
-	query := "SELECT reply FROM chatbot_hints WHERE question = ?"
-	err := db.QueryRow(query, question).Scan(&reply)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return "Sorry not be able to understand you"
-		} 
-	}
-	
-	return reply
-	
-}
-
-func connectDB() *sql.DB{
-	//Kubernetes service connection
-	connectionString := "root:ChangeMe@tcp(nateodb:3306)/chatbot"
-	
-	db, error := sql.Open("mysql", connectionString)
-	if error != nil {
-		log.Println("Failed to open database connection:", error)
-		return nil
-	}
-
-	fmt.Println("Pinging....")
-	error = db.Ping()
-	if error != nil {
-		log.Fatalln("Failed to ping database:", error)
-		return nil
-	} else{
-		log.Println("Connected to database!")
-	}
-	return db
 }

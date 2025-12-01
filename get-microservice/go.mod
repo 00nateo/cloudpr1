@@ -2,7 +2,10 @@ module maria-test
 
 go 1.21.0
 
-require github.com/gorilla/mux v1.8.1
+require (
+	example.com/database v0.0.0-00010101000000-000000000000
+	github.com/gorilla/mux v1.8.1
+)
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
