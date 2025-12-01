@@ -1,58 +1,92 @@
-//create information in the database
 package main
-
 import (
 	"database/sql"
-	"fmt"
-	// "encoding/json"
-	"log"
+	"encoding/json"
 	"net/http"
-
-	"example.com/database"
+	"log"
+	"fmt"
 	"github.com/gorilla/mux"
+	_ "github.com/go-sql-driver/mysql"
 )
+
 var db *sql.DB
+
 type Response struct {
 	Message string `json:"message"`
 }
 
+type PostRequest struct {
+	Question string `json:"question"`
+	Reply    string `json:"reply"`
+}
+
 //main 
 func main(){
-	log.Println("Chatbot Service POST")
-	// database.ConnectDB()
-	database.Test("hola")
-	
+	log.Println("POST Microservice")
+	db = connectDB()
 	router := mux.NewRouter()
 	router.HandleFunc("/", postHandler).Methods("POST")
 
-	log.Println("Server listening on port 8080")
-	http.ListenAndServe(":8080", router)
+	log.Println("Server listening on port 8081")
+	http.ListenAndServe(":8081", router)
 }
 
-
-//syntax
-//POST <request-target>["?"<query>]
+//POST handler
 func postHandler(writer http.ResponseWriter, r *http.Request){
 	//set response type to json
-	// queryParams := r.URL.Query()
-	err := r.ParseForm()
-	if err != nil{
-		fmt.Println("Error: ", err)
+	writer.Header().Set("Content-Type", "application/json")
+	
+	var postReq PostRequest
+	err := json.NewDecoder(r.Body).Decode(&postReq)
+	if err != nil {
+		writer.WriteHeader(http.StatusBadRequest)
+		resp := Response{Message: "Invalid JSON format"}
+		json.NewEncoder(writer).Encode(resp)
+		return
 	}
 
-	database.PostDB(r.PostForm)
-	database.GetDB(r.PostForm)
-	database.PutDB(r.PostForm)
-	database.DeleteDB(r.PostForm)
-//	question := queryParams.Get("question")
+	dbResponse := postDB(postReq)
 
-	writer.Header().Set("Content-Type", "application/json")
-	//write to db??
-	// dbResponse := getDatabase(question)
-	//
-	// resp := Response{Message: dbResponse}
-	//
-	// //encode and send json
-	// json.NewEncoder(writer).Encode(resp)
+	//response from database
+	resp := Response{Message: dbResponse}
+
+	//encode and send json
+	json.NewEncoder(writer).Encode(resp)
 }
 
+func postDB(body PostRequest) string{
+	log.Println("=====Database POST=====")
+	question := body.Question
+	reply := body.Reply
+
+	//insert into database
+	query := "INSERT INTO chatbot_hints (question, reply) VALUES (?, ?)"
+	_, err := db.Exec(query, question, reply)
+	if err != nil {
+		log.Println(err)
+		return "Didnot to insert data"
+	}
+	
+	return "Data inserted"
+}
+
+func connectDB() *sql.DB{
+	//Kubernetes service connection
+	connectionString := "root:ChangeMe@tcp(nateodb:3306)/chatbot"
+	
+	db, error := sql.Open("mysql", connectionString)
+	if error != nil {
+		log.Println("Failed to open database connection:", error)
+		return nil
+	}
+
+	fmt.Println("Pinging....")
+	error = db.Ping()
+	if error != nil {
+		log.Fatalln("Failed to ping database:", error)
+		return nil
+	} else{
+		log.Println("Connected to database!")
+	}
+	return db
+}
